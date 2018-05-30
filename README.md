@@ -6,3 +6,5 @@
 * 编程语言：Python
 * 框架：flask，模板语言：jinja2
 * js图表库：flot
+### 运行方法
+> python web.py
