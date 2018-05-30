@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block scripts %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.flot.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.flot.time.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.flot.axislabels.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/jquery.flot.canvas.js') }}"></script>
+<script type="text/javascript">
+ $(document).ready(function(){
+
+    var updateInterval = 3000;
+    var data =[];
+    var totalPoints = 50;
+    var now=new Date().getTime();
+	function getData() {
+        var url='http://127.0.0.1:5000/get_json';
+        $.getJSON(url,
+            function(info){
+            var price=info['price']/1000;
+            var temp=[now+=updateInterval,price];
+            console.log(temp)
+             data.push(temp);
+             });
+             if(data.length>=totalPoints-1){
+                 data.shift();
+             }
+             var res=data;
+             console.log(res)
+             return res;  
+		}
+
+	
+		$("#updateInterval").val(updateInterval).change(function () {
+			var v = $(this).val();
+			if (v && !isNaN(+v)) {
+				updateInterval = +v;
+				if (updateInterval < 1) {
+					updateInterval = 1;
+				} else if (updateInterval > 6000) {
+					updateInterval = 6000;
+				}
+				$(this).val("" + updateInterval);
+			}
+		});
+        //dataset=[
+        //    {label:"bitcion prices",data:data,color:"#00FF00"}
+        //]
+        
+		var plot = $.plot("#placeholder",[getData()] , {
+			series: {
+				shadowSize: 0,	// Drawing is faster without shadows
+                lines:{
+                    show:true,
+                    lineWidth:1.2,
+                },
+                points:{
+                    show:true,
+                    
+                },
+                label:"bitcion price",
+            },
+            colors:['##00FF00'],
+            grid:{
+                    show:true,
+                    backgroundColor:'#000000',
+            },
+			yaxis: {
+				min: 40,
+                max: 60,
+                tickFormatter:function(v,axis){
+                    if(v%2==0){
+                        return v;
+                    }
+                    else{
+                        return "";
+                    }
+                },
+                axisLabel:'price(¥)*1000',
+                axisLabelUseCanvas:true,
+                axisLabelFontSizePixels:12,
+                axisLabelFontFamily:'Verdana, Arial',
+                axisLabelPadding:6,
+			},
+			xaxis: {
+                mode:"time",
+                tickSize:[2,"second"],
+                tickFormatter:function(v,axis){
+                    var date=new Date(v);
+                    if (date.getSeconds()%20==0){
+                        var hours=date.getHours()?date.getHours():date.getHours();
+                        var minutes=date.getMinutes()<10?"0"+date.getMinutes():date.getMinutes();
+                        var seconds=date.getSeconds()<10?"0"+date.getSeconds():date.getSeconds();
+                        return hours+":"+minutes+":"+seconds;
+                    }
+                    else{
+                        return "";
+                    }
+                },
+				 axisLabel:'Time',
+                 axisLabelUseCanvas:true,
+                 axisLabelFontSizePixels:12,
+                 axisLabelFontFamily:'Verdana, Arial',
+                 axisLabelPadding:10,
+
+			}
+		});
+		function update() {
+            console.log('it works')
+			plot.setData([getData()]);
+			// Since the axes don't change, we don't need to call plot.setupGrid()
+			plot.draw();
+			setTimeout(update, updateInterval);
+		}
+    update()
+});
+</script>
+
+{% endblock %}
+{% block content %}
+<div id="content">
+		<div class="demo-container">
+			<div id="placeholder" class="demo-placeholder"></div>
+		</div>
+
+		<p>Time between updates: <input id="updateInterval" type="text" value="" style="text-align: right; width:5em"> milliseconds</p>
+
+	</div>
+{% endblock %}
