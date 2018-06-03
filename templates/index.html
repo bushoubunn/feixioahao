@@ -10,7 +10,8 @@
 
     var updateInterval = 3000;
     var data =[];
-    var totalPoints = 50;
+    var datainc=[];
+    var totalPoints = 20;
     var now=new Date().getTime();
 	function getData() {
         var url='http://127.0.0.1:5000/get_json';
@@ -18,18 +19,39 @@
             function(info){
             var price=info['price']/1000;
             var temp=[now+=updateInterval,price];
+            var increase=info['increase'];
+            var tempinc=[now+=updateInterval,increase];
             console.log(temp)
-             data.push(temp);
+             data.push(temp)
+             datainc.push(tempinc);
              });
-             if(data.length>=totalPoints-1){
+             if(data.length>totalPoints){
                  data.shift();
+                 datainc.shift();
              }
              var res=data;
+             var resinc=datainc;
+             console.log(res)
+             return [res,resinc];  
+		}
+        /*
+        function getData2() {
+        var url='http://127.0.0.1:5000/get_json';
+        $.getJSON(url,
+            function(info){
+            var increase=info['increase'];
+            var temp=[now+=updateInterval,increase];
+            console.log(temp)
+             datainc.push(temp);
+             });
+             if(datainc.length>=totalPoints-1){
+                 datainc.shift();
+             }
+             var res=datainc;
              console.log(res)
              return res;  
 		}
-
-	
+	 */
 		$("#updateInterval").val(updateInterval).change(function () {
 			var v = $(this).val();
 			if (v && !isNaN(+v)) {
@@ -42,29 +64,42 @@
 				$(this).val("" + updateInterval);
 			}
 		});
-        //dataset=[
-        //    {label:"bitcion prices",data:data,color:"#00FF00"}
-        //]
-        
-		var plot = $.plot("#placeholder",[getData()] , {
-			series: {
-				shadowSize: 0,	// Drawing is faster without shadows
-                lines:{
+        dataset=[
+           {
+               data:getData()[0],
+               lines:{
                     show:true,
                     lineWidth:1.2,
                 },
                 points:{
-                    show:true,
-                    
+                    show:true,   
                 },
                 label:"bitcion price",
+                },
+                {
+                    data:getData()[1],
+                    lines:{
+                    show:true,
+                    lineWidth:1.2,
+                },
+                points:{
+                    show:true,   
+                },
+                label:"bitcion increase",
+                yaxis:2,
+                }
+        ];
+        var options={
+			series: {
+				shadowSize: 0,	// Drawing is faster without shadows
+                
             },
-            colors:['##00FF00'],
+            colors:['##00FF00',"##ff0000"],
             grid:{
                     show:true,
                     backgroundColor:'#000000',
             },
-			yaxis: {
+			yaxes: [{
 				min: 40,
                 max: 60,
                 tickFormatter:function(v,axis){
@@ -81,6 +116,18 @@
                 axisLabelFontFamily:'Verdana, Arial',
                 axisLabelPadding:6,
 			},
+            {
+                min: -10,
+                max: 10,
+                position:"right",
+                
+                axisLabel:'increse(%)',
+                axisLabelUseCanvas:true,
+                axisLabelFontSizePixels:12,
+                axisLabelFontFamily:'Verdana, Arial',
+                axisLabelPadding:6,
+            }
+            ],
 			xaxis: {
                 mode:"time",
                 tickSize:[2,"second"],
@@ -103,10 +150,13 @@
                  axisLabelPadding:10,
 
 			}
-		});
+		};
+		var plot = $.plot("#placeholder",dataset ,options);
 		function update() {
+            getData();
             console.log('it works')
-			plot.setData([getData()]);
+			//plot.setData([getData(),getData2()]);
+            plot.setData(dataset);
 			// Since the axes don't change, we don't need to call plot.setupGrid()
 			plot.draw();
 			setTimeout(update, updateInterval);
